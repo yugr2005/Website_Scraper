@@ -1,6 +1,6 @@
-# Website Scraper (Beginner Python Project)
+# Website Scraper
 
-This is a basic Python application that recursively scrapes a website and all its subpages using `requests` and `BeautifulSoup`.
+This is a Python application that recursively scrapes a website and all its subpages using `requests` and `BeautifulSoup`.
 
 ## Features
 
