@@ -21,6 +21,7 @@ def crawlPage(url, domain, visited):
         return
     
     visited.add(url)        #if not already visited then add to visited set
+
     print(f"\n📄Visiting: {url}")
 
     #Getting response from that url
@@ -33,9 +34,20 @@ def crawlPage(url, domain, visited):
 
     #Coverting html into simple text format
     soup = BeautifulSoup(response.text, 'html.parser')
-    text = soup.get_text(separator='\n', strip=True)
 
-    print("\nScrapped data from url: ", text[:300])
+    for tag in soup.find_all(['h1', 'h2', 'h3', 'p']):
+
+        if tag.name == 'h1':
+            print(f"\n [Heading 1] {tag.get_text(strip=True)}\n")
+
+        elif tag.name == 'h2':
+            print(f"\n [Heading 2] {tag.get_text(strip=True)}\n")
+
+        elif tag.name == 'h3':
+            print(f"    [Heading 3] {tag.get_text(strip=True)}\n")
+
+        elif tag.name == 'p':
+            print(f"  📌 [Paragraph] {tag.get_text(strip=True)}\n")
 
     print("=" * 120)
 
