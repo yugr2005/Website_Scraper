@@ -11,31 +11,64 @@ def main():
 
     visited = set()     #To store visited links and avoid duplication through set
 
-    sitemap = getSitemap(f"{parsed.scheme}://{domain}")
+    #Giver user a choice 
+    print("\nChoose crawling method:")
+
+    print("1. Sitemap-based crawling")
+    print("2. Manual recursive crawling")
+
+    choice = input("\nEnter 1 or 2: ").strip()
+
+    count = [0]     #Counter to track how many pages have been crawled
+
+    #Ask for max pages to crawl
+    user_input = input("\nEnter the maximum number of pages to crawl (or 'all' to crawl the entire website): ").strip()
+
+    #crawl whole website
+    if user_input.lower() == 'all':
+        maxPages = float('inf')
     
-    #If the url has a sitemap
-    if sitemap:
-        print("\nSitemap XML Found!\n")
-
-        urlList = parseSitemap(sitemap)     #get the list of urls from sitemap
-        print(f"Total URLs found in sitemap: {len(urlList)}\n")
-
-        for n in urlList:
-            print(f"→ {n}")
-
-        processSitemapUrls(urlList, domain, visited)    #crawls all pages of url and prints the content
-
-    #if the url does not have a sitemap
     else:
-        print("Starting manual crawl from the entered URL...")
+        try:
+            maxPages = int(user_input)
+        except ValueError:
+            print("Invalid number. Defaulting to 10 pages.")
+            maxPages = 10
 
-        crawlPage(url, domain, visited)
+    if choice == "1":
+        sitemap = getSitemap(f"{parsed.scheme}://{domain}")
+        
+        #If the url has a sitemap
+        if sitemap:
+            print("\nSitemap XML Found!\n")
+
+            urlList = parseSitemap(sitemap)     #get the list of urls from sitemap
+            print(f"Total URLs found in sitemap: {len(urlList)}\n")
+
+            # for n in urlList:
+            #     print(f"→ {n}")
+
+            processSitemapUrls(urlList, domain, visited, maxPages, count)    #crawls all pages of url and prints the content
+
+        #if the url does not have a sitemap
+        else:
+            print("Sitemap not found. Switching to manual crawl...\n")
+
+            crawlPage(url, domain, visited, maxPages, count)
+
+    elif choice == "2":
+        print("\nStarting manual crawl from the entered URL...")
+        crawlPage(url, domain, visited, maxPages, count)
+
+    else:
+        print("Invalid choice.")
 
 def getSitemap(baseUrl):
     sitemapUrl = urljoin(baseUrl, '/sitemap.xml')       #URL of the sitemap  (baseUrl + /sitemap.xml)
     print(f"\nChecking for sitemap at: {sitemapUrl}")
 
     try:
+
         response = re.get(sitemapUrl)
         response.raise_for_status()
         return response.text
@@ -63,17 +96,22 @@ def parseSitemap(sitemap):
         print(f"Error parsing XML: {e}")
         return []
     
-def processSitemapUrls(urlList, domain, visited):
-    print(f"\nCrawling {len(urlList)} pages from sitemap...\n")
+def processSitemapUrls(urlList, domain, visited, maxPages, count):
+    print(f"\nCrawling {maxPages if maxPages != float('inf') else 'all'} pages from sitemap...\n")
+    #ternary operator: <value_if_true> if <condition> else <value_if_false>
 
     for url in urlList:
+        if count[0] >= maxPages:
+            print("\nReached max page limit. Stopping crawl.")
+            return
+        
         parsedUrl = urlparse(url)
 
         if parsedUrl.netloc != domain:
             continue  # Skip links outside the domain
 
         if url not in visited:
-            crawlPage(url, domain, visited)
+            crawlPage(url, domain, visited, maxPages, count)
 
 def normalizeUrl(url):
     parsed = urlparse(url)
@@ -82,7 +120,10 @@ def normalizeUrl(url):
     normalized = parsed._replace(path=parsed.path.rstrip('/')).geturl()
     return normalized
     
-def crawlPage(url, domain, visited):
+def crawlPage(url, domain, visited, maxPages, count):
+
+    if count[0] >= maxPages:
+        return
 
     normalizedUrl = normalizeUrl(url)
 
@@ -91,7 +132,9 @@ def crawlPage(url, domain, visited):
     
     visited.add(normalizedUrl)        #if not already visited then add to visited set
 
-    print(f"\n📄Visiting: {normalizedUrl}")
+    count[0] += 1
+
+    print(f"\n📄Visiting {count[0]}: {normalizedUrl}")
 
     #Getting response from that url
     try:
@@ -121,6 +164,10 @@ def crawlPage(url, domain, visited):
     print("=" * 120)
 
     for linkTag in soup.find_all('a'):      #finds all the <a> tags from the html
+
+        if count[0] >= maxPages:
+            return
+        
         href = linkTag.get('href')      #stores the href from all <a> tags
         if href is None or href.startswith('#'):
             continue        #skip empty or same-page links (#)
@@ -132,9 +179,7 @@ def crawlPage(url, domain, visited):
         if parsedUrl.netloc != domain:      #Checks if the url we just formed is from the same domain or not
             continue
 
-        crawlPage(fullUrl, domain, visited)
+        crawlPage(fullUrl, domain, visited, maxPages, count)
 
 if __name__ == "__main__":
     main()
-
-#optimized code by adding crawling through the sitemap and if not it crawls subpages manually

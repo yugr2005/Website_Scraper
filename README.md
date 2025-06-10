@@ -12,7 +12,7 @@ This is a Python application that scrapes a website and all its subpages using `
   - Main headings (`<h1>`)
   - Subheadings (`<h2>`, `<h3>`)
   - Paragraphs (`<p>`)
-- - If a sitemap is not found, it falls back to crawling the root page and all internal links found through `<a>` tags recursively.
+  - If a sitemap is not found, it falls back to crawling the root page and all internal links found through `<a>` tags recursively.
 - Normalizes URLs (e.g: treats `https://example.com` and `https://example.com/` as the same) to avoid visiting duplicate links.
 - Ensures pages are not revisited by maintaining a set of already visited normalized URLs.
 - This method gets stop when the subpage has no other link (a-tag) to visit further or if the link is already visited before
