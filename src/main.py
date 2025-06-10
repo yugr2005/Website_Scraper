@@ -139,7 +139,7 @@ def crawlPage(url, domain, visited, maxPages, count):
     #Getting response from that url
     try:
         response = re.get(normalizedUrl)
-        response.raise_for_status
+        response.raise_for_status()
 
     except re.exceptions.RequestException as e:
         print(e)
@@ -147,21 +147,7 @@ def crawlPage(url, domain, visited, maxPages, count):
     #Coverting html into simple text format
     soup = BeautifulSoup(response.text, 'html.parser')      #parses html content into tree format
 
-    for tag in soup.find_all(['h1', 'h2', 'h3', 'p']):
-
-        if tag.name == 'h1':
-            print(f"\n [Heading 1] {tag.get_text(strip=True)}\n")       #return data in text form
-
-        elif tag.name == 'h2':
-            print(f"\n [Heading 2] {tag.get_text(strip=True)}\n")
-
-        elif tag.name == 'h3':
-            print(f"    [Heading 3] {tag.get_text(strip=True)}\n")
-
-        elif tag.name == 'p':
-            print(f"  📌 [Paragraph] {tag.get_text(strip=True)}\n")
-
-    print("=" * 120)
+    extractContentFromPage(soup)
 
     for linkTag in soup.find_all('a'):      #finds all the <a> tags from the html
 
@@ -180,6 +166,23 @@ def crawlPage(url, domain, visited, maxPages, count):
             continue
 
         crawlPage(fullUrl, domain, visited, maxPages, count)
+
+def extractContentFromPage(soup):
+    for tag in soup.find_all(['h1', 'h2', 'h3', 'p']):
+
+        if tag.name == 'h1':
+            print(f"\n [Heading 1] {tag.get_text(strip=True)}\n")       #return data in text form
+
+        elif tag.name == 'h2':
+            print(f"\n [Heading 2] {tag.get_text(strip=True)}\n")
+
+        elif tag.name == 'h3':
+            print(f"    [Heading 3] {tag.get_text(strip=True)}\n")
+
+        elif tag.name == 'p':
+            print(f"  📌 [Paragraph] {tag.get_text(strip=True)}\n")
+
+    print("=" * 120)
 
 if __name__ == "__main__":
     main()
