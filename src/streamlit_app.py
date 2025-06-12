@@ -2,29 +2,38 @@ import streamlit as st
 from crawler import get_sitemap, parse_sitemap, crawl_sitemap_urls, crawl_page
 from urllib.parse import urlparse
 
+# Set the page config (title, layout)
+st.set_page_config(page_title="Web Crawler", layout="wide")
+
 #Function to update Progress Bar
 def progress_callback(count, maxPages, progressBar):
     if isinstance(maxPages, int) and (maxPages > 0):
         progress = int((count[0] / maxPages) * 100)
         progressBar.progress(min(progress, 100))
 
-# Set the page config (title, layout)
-st.set_page_config(page_title="Web Crawler", layout="wide")
-
 # --- Title Section ---
-st.title("Website Content Crawler")
-st.markdown("Enter a URL, choose crawl method, and fetch useful content from the web.")
+st.markdown("""
+    <div style='text-align: center;'>
+        <h1>🕷️ Web Content Crawler</h1>
+        <p>Crawl websites using Sitemap or Manual crawl logic.</p>
+    </div>
+""", unsafe_allow_html=True)
 
-# Input fields
-url = st.text_input("Enter Website URL", placeholder = "https://example.com")
-method = st.radio("Crawling Method", options = ["Sitemap-based", "Manual recursive"])
-maxPages = st.text_input("Max Pages to Crawl and `all` to crawl whole website", placeholder = "e.g. 10 or all")
+#Input fields
+with st.sidebar:
+    st.header("🔧 Crawl Settings")
 
-submit = st.button("Start Crawling")
+    url = st.text_input("Website URL", placeholder="https://example.com").strip()
+    method = st.radio("Method", ["Sitemap-based", "Manual recursive"])
+    
+    maxPages = st.text_input("Max Pages (e.g., 10 or all)", placeholder="10").strip()
+
+    submit = st.button("🚀 Start Crawling")
+
 
 if submit:
     if not url:
-        print("Please enter url")
+        st.error("Please enter url")
     else:
         parsed = urlparse(url)
         domain = parsed.netloc
@@ -40,11 +49,14 @@ if submit:
             maxPages = 10
     
     st.success(f"Starting crawl on: {url}")
-    st.info(f"Method: {method}, Max Pages: {maxPages if maxPages != float("inf") else "all"}")
+    st.info(f"Method: {method} | Max Pages: {maxPages if maxPages != float("inf") else 'all'}")
 
     with st.spinner("Crawling in progress..."):
 
         count = [0]
+
+        # Set progress bar object
+        progress_callback.progressBar = st.progress(0)
 
         if method == "Sitemap-based":
             sitemap = get_sitemap(f"{scheme}://{domain}")
@@ -57,8 +69,6 @@ if submit:
                 # Set true progress limit (for the bar)
                 adjustedMax = min(len(filteredUrls), maxPages if isinstance(maxPages, int) else len(filteredUrls))
 
-                # Set progress bar object
-                progress_callback.progressBar = st.progress(0)
                 content = crawl_sitemap_urls(filteredUrls, domain, adjustedMax, count, progress_callback=progress_callback)
 
             else:
@@ -79,8 +89,8 @@ if submit:
         elif tag == "p":
             st.markdown(f"📌 {text}")
 
-    st.success("Crawling complete!")
-    st.info(f"🔍 Total Pages Crawled: {count[0]}")
+    st.metric(label="Pages Crawled", value=count[0])
+    st.success("Crawling Complete!")
 
 
 

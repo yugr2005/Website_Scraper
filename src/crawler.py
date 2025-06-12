@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 def get_sitemap(base_url):
     sitemap_url = urljoin(base_url, '/sitemap.xml')
     try:
-        response = re.get(sitemap_url)
+        response = re.get(sitemap_url, timeout=10)
         response.raise_for_status()
         return response.text
     except re.exceptions.RequestException:
@@ -19,8 +19,10 @@ def parse_sitemap(sitemap):
         for loc_tag in root.iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc"):
             url = loc_tag.text.strip()
             url_list.append(url)
-    except ET.ParseError:
+    except ET.ParseError as e:
+        print(f"Sitemap parse error: {e}")
         return []
+    
     return url_list
 
 def normalize_url(url):
@@ -56,7 +58,7 @@ def crawl_page(url, domain, visited, max_pages, count, progress_callback=None):
         progress_callback(count, max_pages, progress_callback.progressBar)
 
     try:
-        response = re.get(normalized_url)
+        response = re.get(normalized_url, timeout=10)
         response.raise_for_status()
     except re.exceptions.RequestException:
         return []
