@@ -74,11 +74,14 @@ if submit:
             else:
                 st.warning("Sitemap not found. Switching to manual crawl...")
                 content = crawl_page(url, domain, set(), maxPages, count, progress_callback=progress_callback)
+                progress_callback.progressBar.progress(100)
+
 
         else:
             adjustedMax = maxPages
             content = crawl_page(url, domain, set(), adjustedMax, count, progress_callback=progress_callback)
-            
+            progress_callback.progressBar.progress(100)
+
     for tag, text in content:
         if tag == 'h1':
             st.markdown(f"### {text}")
