@@ -2,6 +2,11 @@ import streamlit as st
 from crawler import get_sitemap, parse_sitemap, crawl_sitemap_urls, crawl_page
 from urllib.parse import urlparse
 
+#Function to update Progress Bar
+def progress_callback(count, maxPages, progressBar):
+    if isinstance(maxPages, int) and (maxPages > 0):
+        progress = int((count[0] / maxPages) * 100)
+        progressBar.progress(min(progress, 100))
 
 # Set the page config (title, layout)
 st.set_page_config(page_title="Web Crawler", layout="wide")
@@ -36,22 +41,33 @@ if submit:
     
     st.success(f"Starting crawl on: {url}")
     st.info(f"Method: {method}, Max Pages: {maxPages if maxPages != float("inf") else "all"}")
-    # st.info(f"Max pages: {maxPages if maxPages != float("inf") else "all"}")
 
     with st.spinner("Crawling in progress..."):
+
+        count = [0]
+
         if method == "Sitemap-based":
             sitemap = get_sitemap(f"{scheme}://{domain}")
 
             if sitemap:
                 urlList = parse_sitemap(sitemap)
-                content = crawl_sitemap_urls(urlList, domain, maxPages)
+
+                filteredUrls = [u for u in urlList if urlparse(u).netloc == domain]
+
+                # Set true progress limit (for the bar)
+                adjustedMax = min(len(filteredUrls), maxPages if isinstance(maxPages, int) else len(filteredUrls))
+
+                # Set progress bar object
+                progress_callback.progressBar = st.progress(0)
+                content = crawl_sitemap_urls(filteredUrls, domain, adjustedMax, count, progress_callback=progress_callback)
 
             else:
                 st.warning("Sitemap not found. Switching to manual crawl...")
-                content = crawl_page(url, domain, set(), maxPages, [0])
+                content = crawl_page(url, domain, set(), maxPages, count, progress_callback=progress_callback)
 
         else:
-            content = crawl_page(url, domain, set(), maxPages, [0])
+            adjustedMax = maxPages
+            content = crawl_page(url, domain, set(), adjustedMax, count, progress_callback=progress_callback)
             
     for tag, text in content:
         if tag == 'h1':
@@ -64,5 +80,7 @@ if submit:
             st.markdown(f"📌 {text}")
 
     st.success("Crawling complete!")
+    st.info(f"🔍 Total Pages Crawled: {count[0]}")
+
 
 

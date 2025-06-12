@@ -27,9 +27,8 @@ def normalize_url(url):
     parsed = urlparse(url)
     return parsed._replace(path=parsed.path.rstrip('/')).geturl()
 
-def crawl_sitemap_urls(url_list, domain, max_pages):
+def crawl_sitemap_urls(url_list, domain, max_pages, count, progress_callback=None):
     visited = set()
-    count = [0]
     all_content = []
     for url in url_list:
         if count[0] >= max_pages:
@@ -37,11 +36,11 @@ def crawl_sitemap_urls(url_list, domain, max_pages):
         parsed = urlparse(url)
         if parsed.netloc != domain:
             continue
-        content = crawl_page(url, domain, visited, max_pages, count)
+        content = crawl_page(url, domain, visited, max_pages, count, progress_callback)
         all_content.extend(content)
     return all_content
 
-def crawl_page(url, domain, visited, max_pages, count):
+def crawl_page(url, domain, visited, max_pages, count, progress_callback=None):
     if count[0] >= max_pages:
         return []
 
@@ -51,6 +50,10 @@ def crawl_page(url, domain, visited, max_pages, count):
 
     visited.add(normalized_url)
     count[0] += 1
+
+    if progress_callback:
+        # Update progress bar
+        progress_callback(count, max_pages, progress_callback.progressBar)
 
     try:
         response = re.get(normalized_url)
@@ -75,7 +78,7 @@ def crawl_page(url, domain, visited, max_pages, count):
         if parsed.netloc != domain:
             continue
 
-        page_content.extend(crawl_page(full_url, domain, visited, max_pages, count))
+        page_content.extend(crawl_page(full_url, domain, visited, max_pages, count, progress_callback))
 
     return page_content
 
